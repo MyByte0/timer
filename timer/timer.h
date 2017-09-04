@@ -6,6 +6,7 @@
 #define _TIMER_H_
 
 #include <stdint.h>
+#include <thread>
 #include <functional>
 #include <list>
 #include <map>
@@ -18,7 +19,7 @@
 #include <sys/time.h>
 #endif 
 
-VOID CALLBACK Func(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+//VOID CALLBACK Func(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
 class timer {
 public:
@@ -71,15 +72,8 @@ private:
 	
 	UINT_PTR sys_time;
 	MSG msg;
-
-#ifdef _WIN32
 	std::thread* pthread;
-#else
-#include <unistd.h>
-#include <signal.h>  
-#include <sys/time.h>
-#endif 
+	
 };
-
 
 #endif

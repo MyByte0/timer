@@ -7,10 +7,9 @@
 #include <map>
 #include <iostream> 
 #include <thread>
-#include "..\timer.h"
+#include "timer.h"
 
 static timer* InstantTimer = new timer();
-
 
 #ifdef _WIN32
 static VOID CALLBACK Func(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
@@ -108,7 +107,10 @@ void timer::del_event(timer_event_t event)
 
 	time_t time = pjob->tigger_time;
 	auto it = event_base.find(time);
-
+	if (it == event_base.end())
+	{
+		return;
+	}
 	it->second->remove(pjob);
 	if(it->second->empty())
 	{
