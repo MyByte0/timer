@@ -5,75 +5,75 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-#include <stdint.h>
-#include <thread>
+#include <chrono>
+#include <atomic>
 #include <functional>
-#include <list>
-#include <map>
-#include <iostream> 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#include <signal.h>  
-#include <sys/time.h>
-#endif 
+#include <cstdint>
 
-//VOID CALLBACK Func(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+typedef std::function<void()> TimerCallFunction;
 
-class timer {
+class Timer
+{
 public:
-	timer();
-	~timer();
+  Timer(TimerCallFunction callback, int64_t time, int64_t interval)
+    : m_callback(std::move(callback)), m_nExpiration(time), m_nInterval(interval), m_bRepeated(interval > 0), m_nSequence(++s_nCountCreate)
+  {}
 
+  void call() const
+  {
+    m_callback();
+  }
+  
+  int64_t getExpiration() const{
+    return m_nExpiration;
+  }
+  int64_t getSequence() const{
+    return m_nSequence;
+  }
+  bool isRepeated() const{
+    return m_bRepeated;
+  }
+  
+  void restart(int64_t timeNow)
+  {
+  
+    if (m_bRepeated) 
+    {
+      m_nExpiration = timeNow + m_nInterval;
+    }
+    else
+    {
+      m_nExpiration = 0;
+    }
+  
+  }
+  
+  static int64_t getCount()
+  {
+    return s_nCountCreate;
+  }
+
+private:
+  static std::atomic<int64_t> s_nCountCreate;
+
+  const TimerCallFunction m_callback;
+  int64_t m_nExpiration;
+  const int64_t m_nInterval;
+  const int64_t m_nSequence;
+  const bool m_bRepeated;
+}
+
+class TimerFd{
 public:
-	typedef std::function<void(void*)> timer_callback_t;
-	typedef uint32_t timer_event_t;
-	typedef uint64_t time_t;
+  TimerFd() : m_timer(NULL), m_nSequence(0)
+  {}
 
-public:
-	static timer* getInstand();
-    static void run();
-	void step();
-	void pause();
-	void resume();
-	timer_event_t add_event(time_t time, timer_callback_t event, void* arg);
-	void del_event(timer_event_t event);
+  TimerFd(Timer *timer, int64_t seq) : m_timer(timer), m_nSequence(seq)
+  {}
 
 private:
-	typedef struct {
-		timer_callback_t fun;
-		void* arg;
-		time_t interval;
-		time_t tigger_time;
-		void* ptask;
-	}job_t;
-	typedef std::list<job_t*> task_t;
-	typedef std::map<time_t, task_t*> event_base_t;
-
-private:
-	typedef enum {
-		NORMAL = 0,
-		PAUSE,
-	}state_t;
-
-private:
-	void real_run();
-	bool tigger_condition();
-	void tigger_event();
-	void add_pjob(job_t* pjob);
-
-private:
-	event_base_t event_base;
-
-private:
-	time_t cur_time;
-	volatile state_t state;
-	
-	UINT_PTR sys_time;
-	MSG msg;
-	std::thread* pthread;
-	
-};
+  Timer*    m_timer;
+  int64_t   m_nSequence;
+}
 
 #endif
