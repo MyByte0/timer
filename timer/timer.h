@@ -7,6 +7,8 @@
 
 #include <chrono>
 #include <atomic>
+#include <set>
+#include <vector>
 #include <functional>
 #include <cstdint>
 
@@ -61,7 +63,7 @@ private:
   const int64_t m_nInterval;
   const int64_t m_nSequence;
   const bool m_bRepeated;
-}
+};
 
 class TimerFd{
 public:
@@ -71,9 +73,39 @@ public:
   TimerFd(Timer *timer, int64_t seq) : m_timer(timer), m_nSequence(seq)
   {}
 
+  friend class TimerQueue;
 private:
   Timer*    m_timer;
   int64_t   m_nSequence;
-}
+};
+
+class TimerQueue
+{
+public:
+  TimerQueue();
+  ~TimerQueue();
+
+  TimerFd addTimer(TimerCallFunction callback, int64_t time_when, int64_t interval);
+  void cancel(TimerFd timerFd);
+  void handleRead(int64_t time_now);
+
+private:
+  typedef std::pair<int64_t, Timer*> Entry;
+  typedef std::set<Entry> TimerList;
+  typedef std::pair<Timer*, int64_t> ActiveTimer;
+  typedef std::set<ActiveTimer> ActiveTimerSet;
+
+  void addTimerInLoop(Timer* timer);
+  void cancelInLoop(TimerFd timerFd);
+
+  std::vector<Entry> getExpired(int64_t now);
+  void reset(const std::vector<Entry>& expired, int64_t now);
+  bool insert(Timer * timer);
+
+private:
+  TimerList m_timers;
+  ActiveTimerSet m_activeTimers;
+  int32_t m_head_time;
+};
 
 #endif
