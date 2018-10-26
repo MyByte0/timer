@@ -71,6 +71,8 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(int64_t now)
 	TimerList::iterator end = m_timers.lower_bound(sentry);
 
 	std::copy(m_timers.begin(), end, std::back_inserter(expired));
+	m_timers.erase(m_timers.begin(), end);
+	
 	for (auto &elem : expired)
 	{
 		ActiveTimer timer(elem.second, elem.second->getSequence());
