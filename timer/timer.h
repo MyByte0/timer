@@ -94,9 +94,11 @@ private:
   typedef std::set<Entry> TimerList;
   typedef std::pair<Timer*, int64_t> ActiveTimer;
   typedef std::set<ActiveTimer> ActiveTimerSet;
+  typedef std::vector<TimerFd> CancelList;
 
   void addTimerInLoop(Timer* timer);
   void cancelInLoop(TimerFd timerFd);
+  void cancelList();
 
   std::vector<Entry> getExpired(int64_t now);
   void reset(const std::vector<Entry>& expired, int64_t now);
@@ -104,8 +106,8 @@ private:
 
 private:
   TimerList m_timers;
+  CancelList m_cancelList;
   ActiveTimerSet m_activeTimers;
-  int32_t m_head_time;
 };
 
 #endif

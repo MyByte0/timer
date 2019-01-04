@@ -3,7 +3,7 @@
 
 std::atomic<int64_t> Timer::s_nCountCreate(0);
 
-TimerQueue::TimerQueue() : m_timers(), m_head_time(INTPTR_MAX)
+TimerQueue::TimerQueue() : m_timers()
 {
 }
 
@@ -24,7 +24,7 @@ TimerFd TimerQueue::addTimer(TimerCallFunction callback, int64_t time_when, int6
 
 void TimerQueue::cancel(TimerFd timerFd)
 {
-	cancelInLoop(timerFd);
+	m_cancelList.push_back(timerFd);
 }
 
 void TimerQueue::addTimerInLoop(Timer* timer)
@@ -47,13 +47,19 @@ void TimerQueue::cancelInLoop(TimerFd timerFd)
 	
 }
 
+void TimerQueue::cancelList()
+{
+	for (CancelList::iterator it = m_cancelList.begin(); it!= m_cancelList.end(); ++it)
+	{
+		cancelInLoop(*it);
+	}
+
+	m_cancelList.clear();
+}
+
 void TimerQueue::handleRead(int64_t time_now)
 {
-	if (time_now<m_head_time)
-	{
-		return;
-	}
-	
+	cancelList();	
 	std::vector<Entry> expired = getExpired(time_now);
 
 	for(auto& elem:expired)
@@ -117,7 +123,6 @@ bool TimerQueue::insert(Timer *timer)
 
   if (it == m_timers.end() || when<it->first)
   {
-    m_head_time = when;
 	earliestTrigger = true;
   }
 
